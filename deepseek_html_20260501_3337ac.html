@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MazChat · Friends & Groups</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #0a3348;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .app-container {
+            width: 1400px;
+            max-width: 100%;
+            height: 90vh;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR (friends + groups) */
+        .sidebar {
+            width: 320px;
+            background: #f0f6fe;
+            border-right: 1px solid #cbdbe0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-profile {
+            padding: 20px 16px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .profile-pic-large {
+            width: 70px;
+            height: 70px;
+            background: #1e88e5;
+            border-radius: 50%;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .profile-pic-large img, .profile-pic-large canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .username-display {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #0a2b3e;
+        }
+        .edit-profile-trigger {
+            font-size: 0.7rem;
+            color: #1e88e5;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        /* TABS: Friends / Groups */
+        .chat-tabs {
+            display: flex;
+            border-bottom: 1px solid #cbdbe0;
+            background: #f0f6fe;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            color: #5a6e7c;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .tab-btn.active {
+            color: #1e88e5;
+            border-bottom: 2px solid #1e88e5;
+            background: white;
+        }
+
+        .friends-list, .groups-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .friend-item, .group-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            border-left: 3px solid transparent;
+        }
+        .friend-item.active, .group-item.active {
+            background: #e3f2fd;
+            border-left-color: #1e88e5;
+        }
+        .friend-avatar, .group-avatar {
+            width: 42px;
+            height: 42px;
+            background: #aaccf0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #0a2b3e;
+            overflow: hidden;
+        }
+        .friend-info, .group-info {
+            flex: 1;
+        }
+        .friend-name, .group-name {
+            font-weight: 600;
+        }
+        .friend-status {
+            font-size: 0.7rem;
+            color: #2e7d32;
+        }
+
+        /* add friend row */
+        .add-friend-row {
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #cbdbe0;
+            background: white;
+        }
+        .add-friend-input {
+            flex: 1;
+            border: 1px solid #cbdbe0;
+            border-radius: 40px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+        .add-friend-btn {
+            background: #1e88e5;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* CHAT AREA */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        .chat-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2edf7;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .current-chat-name {
+            font-weight: bold;
+            font-size: 1.3rem;
+            color: #0a2b3e;
+        }
+        .chat-type-badge {
+            font-size: 0.7rem;
+            background: #eef2ff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #1e88e5;
+        }
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f9fdfe;
+        }
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+        .message-mine {
+            justify-content: flex-end;
+        }
+        .message-theirs {
+            justify-content: flex-start;
+        }
+        .bubble {
+            max-width: 70%;
+            padding: 10px 16px;
+            border-radius: 22px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+        .bubble-mine {
+            background: #1e88e5;
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+        .bubble-theirs {
+            background: white;
+            border: 1px solid #cbdbe0;
+            color: #0a2b3e;
+            border-bottom-left-radius: 6px;
+        }
+        .message-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 16px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        .message-timestamp {
+            font-size: 0.6rem;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+        .input-area-chat {
+            padding: 16px 20px;
+            background: white;
+            border-top: 1px solid #e2edf7;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .msg-input {
+            flex: 1;
+            border: 1px solid #cbdbe0;
+            border-radius: 28px;
+            padding: 10px 18px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+        .attach-btn, .send-msg-btn {
+            background: #1e88e5;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .attach-btn {
+            background: #f0f6fe;
+            color: #1e88e5;
+            border: 1px solid #bdd4f0;
+        }
+
+        /* MODAL LOGIN */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-card {
+            background: white;
+            width: 340px;
+            border-radius: 32px;
+            padding: 28px;
+            text-align: center;
+        }
+        .login-card input {
+            width: 100%;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 40px;
+            border: 1px solid #cbdbe0;
+        }
+        .login-card button {
+            background: #1e88e5;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 40px;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+        .error-text { color: red; font-size: 0.8rem; margin-top: 5px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div id="rootApp"></div>
+
+<script>
+    // ---------- STORAGE KEYS ----------
+    const STORAGE_USERS = "mazchat_users_v2";
+    const STORAGE_CURRENT_USER = "mazchat_currentUser_v2";
+    const STORAGE_MESSAGES = "mazchat_messages_v2";   // key: "friend_username" or "group_name"
+    const STORAGE_GROUPS = "mazchat_groups_v2";
+    const STORAGE_FRIENDS = "mazchat_friends_v2";     // store friend usernames per user
+
+    // Helper functions
+    function getUsers() { return JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]'); }
+    function saveUsers(users) { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
+    function getGroups() { return JSON.parse(localStorage.getItem(STORAGE_GROUPS) || '["General","Tech","Random"]'); }
+    function saveGroups(groups) { localStorage.setItem(STORAGE_GROUPS, JSON.stringify(groups)); }
+    
+    function getFriends(username) { 
+        const all = JSON.parse(localStorage.getItem(STORAGE_FRIENDS) || '{}');
+        return all[username] || [];
+    }
+    function saveFriends(username, friendsArray) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_FRIENDS) || '{}');
+        all[username] = friendsArray;
+        localStorage.setItem(STORAGE_FRIENDS, JSON.stringify(all));
+    }
+
+    function getMessages(chatKey) {
+        let all = JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || '{}');
+        return all[chatKey] || [];
+    }
+    function saveMessages(chatKey, msgs) {
+        let all = JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || '{}');
+        all[chatKey] = msgs;
+        localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(all));
+    }
+
+    // Global state
+    let currentUser = null;        // { username, password, profilePic }
+    let activeTab = "friends";     // "friends" or "groups"
+    let currentChat = null;        // { type: 'friend', id: 'friendUsername' } or { type: 'group', id: 'GroupName' }
+    let groupsList = [];
+    let friendsList = [];
+    let messagePollInterval = null;
+
+    function addMessage(chatKey, sender, content, type = 'text', imageData = null) {
+        let msgs = getMessages(chatKey);
+        msgs.push({
+            id: Date.now() + Math.random(),
+            sender: sender,
+            timestamp: new Date().toISOString(),
+            type: type,
+            content: type === 'text' ? content : null,
+            imageData: type === 'image' ? imageData : null
+        });
+        saveMessages(chatKey, msgs);
+        if ((currentChat && (currentChat.type === 'friend' && chatKey === `friend_${currentChat.id}`) ||
+            (currentChat && currentChat.type === 'group' && chatKey === `group_${currentChat.id}`))) {
+            renderMessages();
+        }
+    }
+
+    function renderMessages() {
+        if (!currentChat) { 
+            const container = document.getElementById('messagesContainer');
+            if(container) container.innerHTML = '<div style="padding:20px; text-align:center; color:gray;">Select a friend or group to start chatting</div>';
+            return;
+        }
+        const chatKey = currentChat.type === 'friend' ? `friend_${currentChat.id}` : `group_${currentChat.id}`;
+        const msgs = getMessages(chatKey);
+        const container = document.getElementById('messagesContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let msg of msgs) {
+            const isMine = (msg.sender === currentUser.username);
+            const row = document.createElement('div');
+            row.className = `message-row ${isMine ? 'message-mine' : 'message-theirs'}`;
+            const bubble = document.createElement('div');
+            bubble.className = `bubble ${isMine ? 'bubble-mine' : 'bubble-theirs'}`;
+            if (msg.type === 'text') {
+                bubble.innerHTML = `<div>${escapeHtml(msg.content)}</div>`;
+            } else if (msg.type === 'image' && msg.imageData) {
+                bubble.innerHTML = `<img src="${msg.imageData}" class="message-image" onclick="window.open(this.src)"><div class="message-timestamp">📷 image</div>`;
+            }
+            const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-timestamp';
+            timeDiv.innerText = time;
+            bubble.appendChild(timeDiv);
+            row.appendChild(bubble);
+            container.appendChild(row);
+        }
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    function updateSidebar() {
+        const friendsContainer = document.getElementById('friendsList');
+        const groupsContainer = document.getElementById('groupsList');
+        if (friendsContainer) {
+            friendsContainer.innerHTML = '';
+            if (friendsList.length === 0) {
+                friendsContainer.innerHTML = '<div style="padding: 16px; color: gray; text-align:center;">No friends yet. Add using + above</div>';
+            } else {
+                friendsList.forEach(friend => {
+                    const div = document.createElement('div');
+                    div.className = `friend-item ${currentChat?.type === 'friend' && currentChat.id === friend ? 'active' : ''}`;
+                    const initial = friend.charAt(0).toUpperCase();
+                    div.innerHTML = `<div class="friend-avatar">${initial}</div>
+                                    <div class="friend-info"><div class="friend-name">${escapeHtml(friend)}</div><div class="friend-status">💬 Online</div></div>`;
+                    div.onclick = () => {
+                        currentChat = { type: 'friend', id: friend };
+                        document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
+                        div.classList.add('active');
+                        document.querySelectorAll('.group-item').forEach(el => el.classList.remove('active'));
+                        updateChatHeader();
+                        renderMessages();
+                    };
+                    friendsContainer.appendChild(div);
+                });
+            }
+        }
+        if (groupsContainer) {
+            groupsContainer.innerHTML = '';
+            groupsList.forEach(group => {
+                const div = document.createElement('div');
+                div.className = `group-item ${currentChat?.type === 'group' && currentChat.id === group ? 'active' : ''}`;
+                div.innerHTML = `<div class="group-avatar">${group.charAt(0)}</div><div class="group-info"><div class="group-name">${escapeHtml(group)}</div><div class="friend-status">👥 group chat</div></div>`;
+                div.onclick = () => {
+                    currentChat = { type: 'group', id: group };
+                    document.querySelectorAll('.group-item').forEach(el => el.classList.remove('active'));
+                    div.classList.add('active');
+                    document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
+                    updateChatHeader();
+                    renderMessages();
+                };
+                groupsContainer.appendChild(div);
+            });
+        }
+    }
+
+    function updateChatHeader() {
+        const headerName = document.getElementById('currentChatName');
+        const badge = document.getElementById('chatTypeBadge');
+        if (!currentChat) { if(headerName) headerName.innerText = "MazChat"; if(badge) badge.innerText = ""; return; }
+        if(headerName) headerName.innerText = currentChat.id;
+        if(badge) badge.innerText = currentChat.type === 'friend' ? '💬 direct message' : '👥 group';
+    }
+
+    function sendTextMessage() {
+        const inputField = document.getElementById('messageInput');
+        const text = inputField.value.trim();
+        if (!text || !currentChat) return;
+        const chatKey = currentChat.type === 'friend' ? `friend_${currentChat.id}` : `group_${currentChat.id}`;
+        addMessage(chatKey, currentUser.username, text, 'text', null);
+        inputField.value = "";
+        inputField.style.height = "auto";
+    }
+
+    function sendImage(file) {
+        if (!file || !currentChat) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imageData = e.target.result;
+            const chatKey = currentChat.type === 'friend' ? `friend_${currentChat.id}` : `group_${currentChat.id}`;
+            addMessage(chatKey, currentUser.username, null, 'image', imageData);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function changeProfilePicture() {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    currentUser.profilePic = ev.target.result;
+                    let users = getUsers();
+                    const idx = users.findIndex(u => u.username === currentUser.username);
+                    if(idx !== -1) { users[idx].profilePic = currentUser.profilePic; saveUsers(users); }
+                    localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+                    updateUserProfileUI();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }
+
+    function updateUserProfileUI() {
+        const picDiv = document.getElementById('profilePicLarge');
+        const nameSpan = document.getElementById('sidebarUsername');
+        if(nameSpan) nameSpan.innerText = currentUser.username;
+        if(picDiv) {
+            picDiv.innerHTML = '';
+            if(currentUser.profilePic && currentUser.profilePic.startsWith('data:image')) {
+                const img = document.createElement('img');
+                img.src = currentUser.profilePic;
+                img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
+                picDiv.appendChild(img);
+            } else {
+                const fallback = document.createElement('span');
+                fallback.innerText = currentUser.username.charAt(0).toUpperCase();
+                fallback.style.width = '100%'; fallback.style.height = '100%'; fallback.style.display = 'flex'; fallback.style.alignItems = 'center'; fallback.style.justifyContent = 'center';
+                fallback.style.background = '#1e88e5';
+                picDiv.appendChild(fallback);
+            }
+        }
+    }
+
+    function addFriendByUsername() {
+        const input = document.getElementById('addFriendInput');
+        const friendName = input.value.trim();
+        if(!friendName || friendName === currentUser.username) { alert("Cannot add yourself or empty"); return; }
+        let users = getUsers();
+        const exists = users.find(u => u.username === friendName);
+        if(!exists) { alert(`User "${friendName}" does not exist`); return; }
+        if(friendsList.includes(friendName)) { alert("Already friends"); return; }
+        friendsList.push(friendName);
+        saveFriends(currentUser.username, friendsList);
+        updateSidebar();
+        input.value = "";
+    }
+
+    function createNewGroup() {
+        let groupName = prompt("Enter new group name:");
+        if(groupName && !groupsList.includes(groupName)) {
+            groupsList.push(groupName);
+            saveGroups(groupsList);
+            updateSidebar();
+            currentChat = { type: 'group', id: groupName };
+            updateSidebar();
+            updateChatHeader();
+            renderMessages();
+        } else alert("Invalid or duplicate group");
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        document.getElementById('friendsTab').classList.toggle('active', tab === 'friends');
+        document.getElementById('groupsTab').classList.toggle('active', tab === 'groups');
+        document.getElementById('friendsListContainer').style.display = tab === 'friends' ? 'block' : 'none';
+        document.getElementById('groupsListContainer').style.display = tab === 'groups' ? 'block' : 'none';
+    }
+
+    function renderMainApp() {
+        const root = document.getElementById('rootApp');
+        root.innerHTML = `
+            <div class="app-container">
+                <div class="sidebar">
+                    <div class="user-profile">
+                        <div class="profile-pic-large" id="profilePicLarge" style="cursor:pointer;"></div>
+                        <div class="username-display" id="sidebarUsername">${currentUser.username}</div>
+                        <div class="edit-profile-trigger" id="editProfilePicBtn">📸 change picture</div>
+                    </div>
+                    <div class="chat-tabs">
+                        <button class="tab-btn active" id="friendsTab">👥 Friends</button>
+                        <button class="tab-btn" id="groupsTab">👾 Groups</button>
+                    </div>
+                    <div id="friendsListContainer" style="display: block; flex:1; display:flex; flex-direction:column;">
+                        <div class="friends-list" id="friendsList" style="flex:1; overflow-y:auto;"></div>
+                        <div class="add-friend-row">
+                            <input type="text" id="addFriendInput" class="add-friend-input" placeholder="Username to add">
+                            <button id="addFriendBtn" class="add-friend-btn">➕ Add</button>
+                        </div>
+                    </div>
+                    <div id="groupsListContainer" style="display: none; flex:1; display:flex; flex-direction:column;">
+                        <div class="groups-list" id="groupsList" style="flex:1; overflow-y:auto;"></div>
+                        <div class="add-friend-row">
+                            <button id="createGroupBtn" class="add-friend-btn" style="width:100%">➕ Create New Group</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-area">
+                    <div class="chat-header">
+                        <div class="current-chat-name" id="currentChatName">Select chat</div>
+                        <div class="chat-type-badge" id="chatTypeBadge"></div>
+                    </div>
+                    <div class="messages-container" id="messagesContainer"></div>
+                    <div class="input-area-chat">
+                        <input type="text" class="msg-input" id="messageInput" placeholder="Type a message...">
+                        <button class="attach-btn" id="attachImageBtn">📷</button>
+                        <button class="send-msg-btn" id="sendMsgBtn">➤</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        updateUserProfileUI();
+        updateSidebar();
+        updateChatHeader();
+        renderMessages();
+        document.getElementById('sendMsgBtn')?.addEventListener('click', sendTextMessage);
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); sendTextMessage(); } });
+        document.getElementById('attachImageBtn')?.addEventListener('click', () => {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+            inp.onchange = ev => { if(ev.target.files[0]) sendImage(ev.target.files[0]); };
+            inp.click();
+        });
+        document.getElementById('editProfilePicBtn')?.addEventListener('click', changeProfilePicture);
+        document.getElementById('profilePicLarge')?.addEventListener('click', changeProfilePicture);
+        document.getElementById('addFriendBtn')?.addEventListener('click', addFriendByUsername);
+        document.getElementById('createGroupBtn')?.addEventListener('click', createNewGroup);
+        document.getElementById('friendsTab')?.addEventListener('click', () => switchTab('friends'));
+        document.getElementById('groupsTab')?.addEventListener('click', () => switchTab('groups'));
+        if (messagePollInterval) clearInterval(messagePollInterval);
+        messagePollInterval = setInterval(() => { if (currentChat) renderMessages(); }, 1200);
+    }
+
+    function showLoginModal() {
+        const modalDiv = document.createElement('div');
+        modalDiv.id = 'loginModal';
+        modalDiv.className = 'modal';
+        modalDiv.innerHTML = `
+            <div class="login-card">
+                <h2>💙 MazChat</h2>
+                <input type="text" id="loginUsername" placeholder="Username">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <div id="loginError" class="error-text"></div>
+                <button id="signinBtn">Sign In</button>
+                <button id="signupBtn" style="background:#e3f2fd; color:#0a5d9e;">Create Account</button>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const signin = () => {
+            const uname = document.getElementById('loginUsername').value.trim();
+            const pwd = document.getElementById('loginPassword').value.trim();
+            const users = getUsers();
+            const user = users.find(u => u.username === uname && u.password === pwd);
+            if(user) {
+                currentUser = { username: user.username, password: user.password, profilePic: user.profilePic || null };
+                localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+                friendsList = getFriends(currentUser.username);
+                groupsList = getGroups();
+                modalDiv.remove();
+                renderMainApp();
+            } else {
+                document.getElementById('loginError').innerText = "Invalid credentials";
+            }
+        };
+        const signup = () => {
+            const uname = document.getElementById('loginUsername').value.trim();
+            const pwd = document.getElementById('loginPassword').value.trim();
+            if(!uname || !pwd) { document.getElementById('loginError').innerText = "Fill both fields"; return; }
+            let users = getUsers();
+            if(users.find(u => u.username === uname)) { document.getElementById('loginError').innerText = "Username taken"; return; }
+            const newUser = { username: uname, password: pwd, profilePic: null };
+            users.push(newUser);
+            saveUsers(users);
+            currentUser = newUser;
+            localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+            saveFriends(uname, []);
+            friendsList = [];
+            groupsList = getGroups();
+            modalDiv.remove();
+            renderMainApp();
+        };
+        document.getElementById('signinBtn').onclick = signin;
+        document.getElementById('signupBtn').onclick = signup;
+    }
+
+    function init() {
+        const storedUser = localStorage.getItem(STORAGE_CURRENT_USER);
+        if(storedUser) {
+            currentUser = JSON.parse(storedUser);
+            friendsList = getFriends(currentUser.username);
+            groupsList = getGroups();
+            renderMainApp();
+        } else {
+            showLoginModal();
+        }
+    }
+    window.addEventListener('load', init);
+</script>
+</body>
+</html>
